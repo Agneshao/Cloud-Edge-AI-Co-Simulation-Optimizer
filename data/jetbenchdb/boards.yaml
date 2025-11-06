@@ -1,0 +1,23 @@
+# Minimal Jetson board specifications for benchmarking
+
+boards:
+  - sku: orin_super
+    model: "AGX Orin"
+    compute_capability: 8.9
+    
+  - sku: orin_nx
+    model: "Orin NX"
+    compute_capability: 8.9
+    
+  - sku: orin_nano
+    model: "Orin Nano"
+    compute_capability: 8.9
+    
+  - sku: xavier_nx
+    model: "Xavier NX"
+    compute_capability: 7.2
+    
+  - sku: nano
+    model: "Nano"
+    compute_capability: 6.2
+

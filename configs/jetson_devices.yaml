@@ -1,0 +1,83 @@
+# Jetson device specifications
+
+jetson_devices:
+  orin_super:
+    name: "Jetson AGX Orin (Super)"
+    compute_capability: 8.9
+    cuda_cores: 2048
+    tensor_cores: 64
+    memory_gb: 64
+    power_modes:
+      - name: "MAXN"
+        max_power_w: 100
+        gpu_freq_mhz: 1300
+        cpu_freq_mhz: 2200
+      - name: "15W"
+        max_power_w: 15
+        gpu_freq_mhz: 625
+        cpu_freq_mhz: 1200
+  
+  orin_nx:
+    name: "Jetson Orin NX"
+    compute_capability: 8.9
+    cuda_cores: 1024
+    tensor_cores: 32
+    memory_gb: 16
+    power_modes:
+      - name: "MAXN"
+        max_power_w: 25
+        gpu_freq_mhz: 1000
+        cpu_freq_mhz: 1900
+      - name: "15W"
+        max_power_w: 15
+        gpu_freq_mhz: 765
+        cpu_freq_mhz: 1400
+  
+  orin_nano:
+    name: "Jetson Orin Nano"
+    compute_capability: 8.9
+    cuda_cores: 1024
+    tensor_cores: 32
+    memory_gb: 8
+    power_modes:
+      - name: "MAXN"
+        max_power_w: 15
+        gpu_freq_mhz: 625
+        cpu_freq_mhz: 1400
+      - name: "10W"
+        max_power_w: 10
+        gpu_freq_mhz: 510
+        cpu_freq_mhz: 1200
+  
+  xavier_nx:
+    name: "Jetson Xavier NX"
+    compute_capability: 7.2
+    cuda_cores: 384
+    tensor_cores: 48
+    memory_gb: 8
+    power_modes:
+      - name: "MAXN"
+        max_power_w: 25
+        gpu_freq_mhz: 1100
+        cpu_freq_mhz: 1900
+      - name: "15W"
+        max_power_w: 15
+        gpu_freq_mhz: 800
+        cpu_freq_mhz: 1400
+  
+  nano:
+    name: "Jetson Nano"
+    compute_capability: 6.2
+    cuda_cores: 128
+    tensor_cores: 0
+    memory_gb: 4
+    power_modes:
+      - name: "MAXN"
+        max_power_w: 10
+        gpu_freq_mhz: 921
+        cpu_freq_mhz: 1479
+      - name: "5W"
+        max_power_w: 5
+        gpu_freq_mhz: 640
+        cpu_freq_mhz: 1020
+

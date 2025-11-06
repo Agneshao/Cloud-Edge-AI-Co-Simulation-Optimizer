@@ -1,0 +1,33 @@
+# Optimization search configuration
+
+# Search budget
+max_iterations: 100
+max_time_s: 300
+
+# Objective weights (sum should be ~1.0)
+objective_weights:
+  latency: 0.4
+  power: 0.3
+  thermal: 0.2
+  accuracy: 0.1  # If applicable
+
+# Search algorithm
+algorithm: optuna  # greedy, optuna, bayesian
+
+# Knob bounds
+knob_bounds:
+  precision:
+    - INT8
+    - FP16
+    - FP32
+  resolution_height: [320, 1280]
+  resolution_width: [320, 1280]
+  batch_size: [1, 8]
+  frame_skip: [0, 4]
+
+# Early stopping
+early_stopping:
+  enabled: true
+  patience: 10
+  min_delta: 0.01
+

@@ -1,0 +1,11 @@
+sku,precision,resolution,latency_factor,power_factor
+orin_super,FP32,640x480,1.0,1.0
+orin_super,FP16,640x480,0.7,0.8
+orin_super,INT8,640x480,0.5,0.6
+orin_nx,FP32,640x480,1.25,0.9
+orin_nx,FP16,640x480,0.875,0.72
+orin_nx,INT8,640x480,0.625,0.54
+orin_nano,FP32,640x480,1.67,0.7
+orin_nano,FP16,640x480,1.17,0.56
+orin_nano,INT8,640x480,0.835,0.42
+

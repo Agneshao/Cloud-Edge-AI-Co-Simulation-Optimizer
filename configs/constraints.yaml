@@ -1,0 +1,28 @@
+# Performance constraints
+
+# Minimum FPS requirement
+min_fps: 30.0
+
+# Maximum power consumption (watts)
+max_power_w: 25.0
+
+# Maximum skin temperature (Celsius) before thermal throttling
+max_skin_temp_c: 70.0
+
+# Ambient temperature (Celsius)
+ambient_temp_c: 25.0
+
+# Memory constraints
+max_memory_mb: 4096
+
+# Latency constraints
+max_latency_ms: 100.0
+target_latency_ms: 33.0  # ~30 FPS
+
+# Accuracy constraints (for optimization)
+min_accuracy: 0.8  # Minimum acceptable accuracy (if applicable)
+
+# Thermal model parameters
+thermal_resistance_c_per_w: 0.5
+thermal_capacitance_j_per_c: 10.0
+

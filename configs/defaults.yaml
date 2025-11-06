@@ -1,0 +1,29 @@
+# EdgeTwin default configuration
+
+# Operating mode
+mode: development  # development, production
+
+# Global switches
+enable_profiling: true
+enable_simulation: true
+enable_optimization: true
+enable_reporting: true
+
+# Default paths
+data_dir: data
+artifacts_dir: artifacts
+reports_dir: artifacts/reports
+
+# Profiling defaults
+default_sku: orin_super
+default_iterations: 10
+warmup_iterations: 3
+
+# Simulation defaults
+isaac_sim_endpoint: https://sim.isaac.nvidia.com
+default_simulation_duration_s: 10.0
+
+# Logging
+log_level: INFO
+log_file: artifacts/edgetwin.log
+

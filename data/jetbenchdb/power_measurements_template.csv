@@ -1,0 +1,22 @@
+# Power measurement data template
+# Use this format to collect empirical power measurements for model calibration
+#
+# Columns:
+# - power_w: Measured power consumption in watts (from tegrastats or power meter)
+# - fps: Frames per second achieved
+# - precision: Model precision (INT8, FP16, FP32)
+# - sku: Jetson SKU (orin_super, orin_nx, orin_nano, etc.)
+# - resolution_h: Image height in pixels
+# - resolution_w: Image width in pixels
+# - power_mode: Power mode (MAXN, 15W, 10W, 5W)
+# - gpu_util: GPU utilization (0-1, optional, from tegrastats)
+# - cpu_util: CPU utilization (0-1, optional, from tegrastats)
+# - timestamp: Measurement timestamp (optional)
+#
+# Example:
+# power_w,fps,precision,sku,resolution_h,resolution_w,power_mode,gpu_util,cpu_util,timestamp
+# 15.2,39.2,FP16,orin_super,640,480,MAXN,0.85,0.25,2024-01-15T10:30:00
+# 12.8,45.1,INT8,orin_super,640,480,MAXN,0.75,0.20,2024-01-15T10:31:00
+
+power_w,fps,precision,sku,resolution_h,resolution_w,power_mode,gpu_util,cpu_util,timestamp
+

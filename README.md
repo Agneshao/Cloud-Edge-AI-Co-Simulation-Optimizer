@@ -1,36 +1,47 @@
-### Project Structure:
+# EdgeTwin
 
-edgematchpp/
+**Hardware-aware co-simulation platform for robotics AI**
+
+EdgeTwin combines real Jetson profiling, cloud simulation (Isaac Sim), and AI-driven optimization to help teams verify performance before deploying to hardware.
+
+## Features
+
+- 🤖 **Jetson-Aware Profiling**: Simulated (and real) hardware profiling for NVIDIA Jetson families
+- ☁️ **Cloud Simulation**: Isaac Sim integration for scenario-based testing
+- 🎯 **AI-Driven Optimization**: Automated configuration tuning (precision, resolution, batch size, etc.)
+- 📊 **Performance Reports**: HTML reports with profiling and optimization results
+
+## Project Structure
+
+```
+edgetwin/
 ├─ src/
-│  ├─ edgematchpp_core/                 # PURE logic only
-│  │  ├─ profile/
-│  │  │  ├─ stages.py                   # tiny preprocess/infer/postprocess shims
-│  │  │  └─ pipeline_profiler.py        # times the 3 stages on local machine
-│  │  ├─ predict/
-│  │  │  ├─ features.py                 # build features from profile + knobs
-│  │  │  ├─ latency_rule.py             # rule-based latency scaling (sku × precision × res)
-│  │  │  ├─ power.py                    # simple power model (base + k·fps)
-│  │  │  └─ thermal_rc.py               # 1-pole RC thermal model (time-to-throttle)
-│  │  ├─ optimize/
-│  │  │  ├─ knobs.py                    # defines knobs: precision, res, frame_skip, batch
-│  │  │  └─ search.py                   # greedy/Optuna search → best config
-│  │  └─ plan/
-│  │     └─ reporter.py                 # Jinja2 → HTML (and optional PDF) report
-│  ├─ edgematchpp_apps/                 # I/O surfaces (thin)
-│  │  ├─ api/
-│  │  │  ├─ server.py                   # FastAPI: /profile /predict /optimize /plan
-│  │  │  └─ schemas.py                  # Pydantic request/response models
-│  │  ├─ cli/
-│  │  │  └─ main.py                     # CLI that wires profile→predict→optimize→report
-│  │  └─ web/
-│  │     └─ streamlit_app.py            # simple UI: upload, sliders, run, view report
-│  └─ edgematchpp_adapters/
-│     └─ __init__.py                    # (placeholder; add onnx_runner/rose_cloud later)
+│  ├─ core/                              # Core logic modules
+│  │  ├─ profile/                        # Jetson-aware profiling
+│  │  │  ├─ stages.py                    # Pipeline stage shims
+│  │  │  └─ pipeline_profiler.py         # Main profiling logic
+│  │  ├─ predict/                         # Performance prediction models
+│  │  │  ├─ features.py                  # Feature engineering
+│  │  │  ├─ latency_rule.py               # Latency prediction
+│  │  │  ├─ power.py                     # Power consumption models
+│  │  │  └─ thermal_rc.py                # Thermal modeling
+│  │  ├─ optimize/                       # Optimization algorithms
+│  │  │  ├─ knobs.py                     # Configuration knobs
+│  │  │  └─ search.py                    # AI-driven search
+│  │  └─ plan/                           # Reporting
+│  │     └─ reporter.py                  # HTML report generation
+│  ├─ apps/                              # Application interfaces
+│  │  ├─ api/                            # FastAPI REST server
+│  │  ├─ cli/                            # Command-line interface
+│  │  └─ web/                            # Streamlit web UI
+│  └─ adapters/                          # Hardware/cloud adapters
+│     ├─ jetson_adapter.py               # Jetson hardware integration
+│     └─ isaac_sim_adapter.py            # Isaac Sim integration
 ├─ configs/
-│  ├─ defaults.yaml                     # includes mode: hackathon, and global switches
-│  ├─ devices.yaml                      # 3 SKUs (Orin Super + 2 extrapolated) with power modes
-│  ├─ constraints.yaml                  # min_fps, max_power_w, max_skin_temp_c, ambient_c
-│  └─ search.yaml                       # search budgets/bounds + weights for objective
+│  ├─ defaults.yaml                      # Default configuration
+│  ├─ jetson_devices.yaml                # Jetson SKU specifications
+│  ├─ constraints.yaml                   # Performance constraints
+│  └─ optimization.yaml                  # Optimization parameters
 ├─ data/
 │  ├─ jetbenchdb/
 │  │  ├─ boards.yaml                    # minimal device specs
@@ -40,14 +51,69 @@ edgematchpp/
 │     ├─ yolov5n.onnx                   # tiny demo model (placeholder ok)
 │     └─ clip.mp4                       # 5–10s sample video
 ├─ artifacts/
-│  └─ reports/                          # generated HTML reports
+│  └─ reports/                           # Generated HTML reports
 ├─ tests/
-│  ├─ unit/
-│  │  └─ test_predict_monotonic.py      # res↑ ⇒ latency↑; INT8 < FP16 < FP32
-│  └─ e2e/
-│     └─ test_full_flow.py              # runs profile→predict→optimize→report smoke
+│  ├─ unit/                              # Unit tests
+│  └─ e2e/                               # End-to-end tests
 ├─ docs/
-│  └─ ARCHITECTURE.md                   # 1-page diagram + user story (keep lean)
-├─ Makefile                             # setup/run targets (demo, test, report)
-├─ pyproject.toml                       # deps + ruff/mypy/pytest config
-└─ README.md                            # quickstart + demo script
+│  └─ ARCHITECTURE.md                    # Architecture documentation
+├─ Makefile                              # Build and run commands
+├─ pyproject.toml                        # Dependencies and configuration
+└─ README.md                             # This file
+```
+
+## Quick Start
+
+### Installation
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+make install
+# or
+pip install -e .
+```
+
+### Usage
+
+#### API Server
+
+```bash
+make run-api
+# or
+uvicorn src.apps.api.server:app --reload
+```
+
+#### Web UI
+
+```bash
+make run-web
+# or
+streamlit run src/apps/web/streamlit_app.py
+```
+
+#### CLI
+
+```bash
+python -m src.apps.cli.main profile --model data/samples/model.onnx --sku orin_super
+```
+
+## Development
+
+```bash
+# Run tests
+make test
+
+# Lint code
+make lint
+
+# Format code
+make format
+```
+
+## License
+
+MIT

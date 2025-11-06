@@ -1,0 +1,3 @@
+timestamp,sku,model_path,precision,resolution,latency_ms,power_w,memory_mb,fps
+# This file will be appended with profiling results from local runs
+
