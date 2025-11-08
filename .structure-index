@@ -1,0 +1,59 @@
+# Project Structure Index (Local Maintenance Only)
+# Used by code structure review assistant to track changes
+# NOT TO BE COMMITTED TO GIT
+
+[METADATA]
+last_updated = 2025-11-06T00:00:00Z
+version = 1.0
+maintained_by = Code Structure Review Assistant
+git_tracked = false
+
+[FOLDERS]
+src = src/                          # Core application code
+configs = configs/                  # Configuration files
+data = data/                        # Data and benchmarks
+docs = docs/                        # Documentation
+tests = tests/                      # Test suite
+artifacts = artifacts/              # Runtime outputs (git-ignored)
+
+[FILES_MONITORED]
+# Core modules - track for architectural changes
+src/core/profile/pipeline_profiler.py = profile/[profile_logic]
+src/core/predict/power_models.py = predict/[power_models]
+src/core/optimize/search.py = optimize/[search_algorithms]
+src/core/plan/reporter.py = plan/[reporting]
+
+# Apps - track for interface changes
+src/apps/api/server.py = apps/[api_endpoints]
+src/apps/cli/main.py = apps/[cli_commands]
+src/apps/web/streamlit_app.py = apps/[web_ui]
+
+# Adapters - track for integration changes
+src/adapters/jetson_adapter.py = adapters/[jetson]
+src/adapters/isaac_sim_adapter.py = adapters/[isaac_sim]
+
+# Configs - track for configuration changes
+configs/defaults.yaml = config/[defaults]
+configs/jetson_devices.yaml = config/[devices]
+configs/constraints.yaml = config/[constraints]
+configs/optimization.yaml = config/[optimization]
+
+[IMPORTANT_GAPS]
+# Critical missing items
+data/samples/yolov5n.onnx = MISSING - needed for demo
+data/samples/clip.mp4 = MISSING - needed for demo
+
+# Incomplete implementations
+src/apps/cli/main.py:50-103 = TODO - wire to core modules
+src/apps/api/server.py:30-45 = TODO - replace mock responses
+tests/e2e/test_full_flow.py = TODO - implement full flow tests
+
+[NEXT_STEPS]
+1. Create placeholder files in data/samples/
+2. Wire CLI/API endpoints to core modules
+3. Add error handling to model loading
+4. Add input validation to API endpoints
+5. Set up logging configuration
+
+[CHANGE_LOG]
+- 2025-11-06: Initial structure analysis and documentation created
