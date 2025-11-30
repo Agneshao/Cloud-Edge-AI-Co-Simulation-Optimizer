@@ -52,3 +52,24 @@ class OptimizeResponse(BaseModel):
     predicted_performance: Dict[str, Any]
     objective_value: float
 
+
+class ModelOptimizeRequest(BaseModel):
+    """Request to optimize a model file."""
+    model_path: str = Field(..., description="Path to ONNX model file")
+    target_fps: Optional[float] = Field(None, description="Target FPS")
+    target_latency_ms: Optional[float] = Field(None, description="Target latency in milliseconds")
+    max_power_w: Optional[float] = Field(None, description="Maximum power constraint")
+    sku: str = Field("orin_super", description="Jetson SKU identifier")
+    output_path: Optional[str] = Field(None, description="Output path for optimized model")
+
+
+class ModelOptimizeResponse(BaseModel):
+    """Response from model optimization."""
+    optimized_model_path: str
+    achieved_fps: float
+    precision: str
+    resolution: Tuple[int, int]
+    latency_ms: float
+    power_w: float
+    optimization_applied: bool
+    message: str

@@ -1,27 +1,24 @@
-"""FastAPI server for EdgeTwin.
-
-TODO: API design:
-  1. REST principles: Resources (models, profiles), actions (POST, GET)
-  2. Request/Response: Use Pydantic schemas (already defined in schemas.py)
-  3. Error handling: Use HTTPException for errors (400, 404, 500)
-  4. Async: Use async/await for I/O operations (database, file reads)
-  5. Documentation: FastAPI auto-generates docs at /docs
-  6. Testing: Use httpx or requests to test endpoints
-
-TODO: Next steps:
-  1. Wire up endpoints to actual modules (replace mock data)
-  2. Add input validation
-  3. Add error handling
-  4. Add logging
-  5. Add authentication if needed
-"""
+"""FastAPI server for EdgeTwin."""
 
 from fastapi import FastAPI, HTTPException
+from pathlib import Path
+import sys
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from .schemas import (
     ProfileRequest, ProfileResponse,
     PredictRequest, PredictResponse,
-    OptimizeRequest, OptimizeResponse
+    OptimizeRequest, OptimizeResponse,
+    ModelOptimizeRequest, ModelOptimizeResponse
 )
+from src.core.profile.pipeline_profiler import PipelineProfiler
+from src.core.predict.latency_rule import predict_latency
+from src.core.predict.power import predict_power
+from src.core.predict.thermal_rc import ThermalRC
+from src.core.optimize.knobs import ConfigKnobs
+from src.core.optimize.search import greedy_search
 
 app = FastAPI(
     title="EdgeTwin API",
@@ -40,74 +37,173 @@ async def root():
 async def profile(request: ProfileRequest):
     """
     Profile a model on simulated Jetson hardware.
-    
-    TODO: Implementation:
-      1. Import: from src.core.profile import PipelineProfiler
-      2. Create profiler: profiler = PipelineProfiler(sku=request.sku)
-      3. Profile: results = profiler.profile(request.model_path, request.video_path)
-      4. Convert: Map results dict to ProfileResponse
-      5. Error handling: Try/except, return HTTPException on error
     """
-    # TODO: Replace mock with real implementation
-    # For now, return mock data
-    return ProfileResponse(
-        latency_ms=25.5,
-        power_w=15.2,
-        memory_mb=512.0,
-        fps=39.2,
-        sku=request.sku
-    )
+    try:
+        profiler = PipelineProfiler(sku=request.sku)
+        results = profiler.profile(
+            model_path=request.model_path,
+            video_path=request.video_path,
+            iterations=request.iterations
+        )
+        
+        return ProfileResponse(
+            latency_ms=results['latency_ms']['total'],
+            power_w=results['power_w'],
+            memory_mb=results['memory_mb'],
+            fps=results['fps'],
+            sku=request.sku
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"File not found: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Profiling failed: {str(e)}")
 
 
 @app.post("/predict", response_model=PredictResponse)
 async def predict(request: PredictRequest):
     """
     Predict performance for given configuration.
-    
-    TODO: Implementation:
-      1. Import: from src.core.predict import predict_power, predict_latency
-      2. Predict latency: latency = predict_latency(...)
-      3. Predict power: power = predict_power(...)
-      4. Predict thermal: Use ThermalRC class for time_to_throttle
-      5. Combine: Create PredictResponse with all predictions
     """
-    # TODO: Replace mock with real implementation
-    # For now, return mock data
-    return PredictResponse(
-        latency_ms=request.base_latency_ms * 1.2,
-        power_w=request.base_power_w * 1.1,
-        time_to_throttle_s=300.0
-    )
+    try:
+        # Predict latency
+        pred_latency = predict_latency(
+            base_latency_ms=request.base_latency_ms,
+            sku=request.sku,
+            precision=request.precision,
+            resolution=request.resolution,
+            batch_size=request.batch_size
+        )
+        
+        # Predict power
+        pred_fps = 1000.0 / pred_latency if pred_latency > 0 else request.fps
+        pred_power = predict_power(
+            base_power_w=request.base_power_w,
+            fps=pred_fps,
+            precision=request.precision,
+            sku=request.sku,
+            resolution=request.resolution
+        )
+        
+        # Predict thermal (time to throttle)
+        thermal_model = ThermalRC(
+            ambient_temp_c=25.0,
+            thermal_resistance_c_per_w=0.5,
+            thermal_capacitance_j_per_c=10.0,
+            max_temp_c=70.0
+        )
+        time_to_throttle = thermal_model.time_to_throttle(pred_power)
+        
+        return PredictResponse(
+            latency_ms=pred_latency,
+            power_w=pred_power,
+            time_to_throttle_s=time_to_throttle if time_to_throttle != float('inf') else -1.0
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 
 @app.post("/optimize", response_model=OptimizeResponse)
 async def optimize(request: OptimizeRequest):
     """
     Optimize configuration given constraints.
-    
-    TODO: Implementation:
-      1. Define objective function: Combine latency, power, constraints
-      2. Import: from src.core.optimize import greedy_search, ConfigKnobs
-      3. Search: best_knobs = greedy_search(objective_fn)
-      4. Predict performance: Use predict functions with best_knobs
-      5. Validate constraints: Check if solution meets all constraints
     """
-    # TODO: Replace mock with real implementation
-    # For now, return mock data
-    return OptimizeResponse(
-        optimized_config={
-            "precision": "INT8",
-            "resolution": [640, 480],
-            "batch_size": 1,
-            "frame_skip": 0
-        },
-        predicted_performance={
-            "latency_ms": 20.0,
-            "power_w": 12.0,
-            "fps": 50.0
-        },
-        objective_value=0.5
-    )
+    try:
+        profile_results = request.profile_results
+        constraints = request.constraints
+        weights = request.objective_weights or {"latency": 1.0, "power": 0.1}
+        
+        # Extract baseline metrics
+        latency_ms = profile_results.get("latency_ms", {})
+        if isinstance(latency_ms, dict):
+            base_latency_ms = latency_ms.get("total", 50.0)
+        else:
+            base_latency_ms = float(latency_ms)
+        
+        base_power_w = float(profile_results.get("power_w", 10.0))
+        sku = profile_results.get("sku", "orin_super")
+        
+        # Define objective function
+        def objective(knobs: ConfigKnobs) -> float:
+            pred_latency = predict_latency(
+                base_latency_ms, sku, knobs.precision,
+                knobs.resolution, knobs.batch_size
+            )
+            pred_fps = 1000.0 / pred_latency if pred_latency > 0 else 30.0
+            pred_power = predict_power(
+                base_power_w, pred_fps, knobs.precision,
+                sku, knobs.resolution
+            )
+            
+            # Apply constraints
+            max_power = constraints.get("max_power_w", 20.0)
+            max_latency = constraints.get("max_latency_ms", 100.0)
+            
+            if pred_power > max_power:
+                return 10000.0  # Hard constraint violation
+            if pred_latency > max_latency:
+                return 10000.0  # Hard constraint violation
+            
+            # Weighted objective
+            return weights["latency"] * pred_latency + weights["power"] * pred_power
+        
+        # Run optimization
+        best_knobs = greedy_search(
+            objective_fn=objective,
+            initial_knobs=ConfigKnobs(),
+            max_iterations=50
+        )
+        
+        # Get predictions for best config
+        best_latency = predict_latency(
+            base_latency_ms, sku, best_knobs.precision,
+            best_knobs.resolution, best_knobs.batch_size
+        )
+        best_fps = 1000.0 / best_latency if best_latency > 0 else 0
+        best_power = predict_power(
+            base_power_w, best_fps, best_knobs.precision,
+            sku, best_knobs.resolution
+        )
+        
+        return OptimizeResponse(
+            optimized_config=best_knobs.to_dict(),
+            predicted_performance={
+                "latency_ms": best_latency,
+                "power_w": best_power,
+                "fps": best_fps
+            },
+            objective_value=objective(best_knobs)
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Optimization failed: {str(e)}")
+
+
+@app.post("/optimize-model", response_model=ModelOptimizeResponse)
+async def optimize_model(request: ModelOptimizeRequest):
+    """
+    Optimize model file to meet target metrics (FPS, latency, power).
+    
+    This endpoint:
+    1. Takes an ONNX model file
+    2. Optimizes it (quantization, precision conversion) based on target metrics
+    3. Returns optimized model path and performance metrics
+    """
+    try:
+        from src.core.optimize.model_converter import optimize_model_for_metrics
+        
+        results = optimize_model_for_metrics(
+            model_path=request.model_path,
+            target_fps=request.target_fps,
+            target_latency_ms=request.target_latency_ms,
+            max_power_w=request.max_power_w,
+            sku=request.sku,
+            output_path=request.output_path
+        )
+        
+        return ModelOptimizeResponse(**results)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"Model file not found: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Model optimization failed: {str(e)}")
 
 
 @app.get("/health")

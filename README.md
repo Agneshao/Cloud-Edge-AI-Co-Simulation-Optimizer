@@ -114,6 +114,18 @@ make lint
 make format
 ```
 
+### For Backend & ML Developers
+
+If you're working on the software backend and ML components, check out:
+
+- **[Getting Started Guide](docs/GETTING_STARTED_BACKEND_ML.md)** - Comprehensive guide for backend/ML development
+- **[Example Script](examples/backend_ml_example.py)** - Run `python examples/backend_ml_example.py` to see components in action
+
+Key areas to work on:
+- **Prediction Models** (`src/core/predict/`) - Power, latency, and thermal prediction
+- **Optimization** (`src/core/optimize/`) - AI-driven configuration search
+- **API Backend** (`src/apps/api/`) - FastAPI endpoints (currently using mock data)
+
 ## License
 
 MIT
