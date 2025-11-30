@@ -2,6 +2,7 @@
 
 import streamlit as st
 from pathlib import Path
+from src.core.cosim import ToyEnv, run_cosim, evaluate_logs
 
 
 def main():
@@ -43,6 +44,11 @@ def main():
     batch_size = st.sidebar.slider("Batch Size", 1, 8, 1)
     frame_skip = st.sidebar.slider("Frame Skip", 0, 4, 0)
     
+    # Co-Simulation Configuration
+    st.sidebar.subheader("Co-Simulation")
+    base_latency_ms = st.sidebar.slider("Base Latency (ms)", 10, 200, 50, 5)
+    max_steps = st.sidebar.slider("Max Steps", 50, 500, 300, 50)
+    
     # Main content
     col1, col2 = st.columns(2)
     
@@ -55,6 +61,57 @@ def main():
         st.header("Predict")
         if st.button("Run Prediction"):
             st.info("Prediction not yet implemented. This will predict performance.")
+    
+    # Co-Simulation Section
+    st.header("🎯 EdgeTwin Co-Simulation")
+    st.markdown(
+        "Run hardware-aware co-simulation to see how latency affects task performance. "
+        "The simulation demonstrates how hardware delays cause control failures."
+    )
+    
+    if st.button("Run EdgeTwin Co-Sim", type="primary"):
+        with st.spinner("Running co-simulation..."):
+            # Create environment
+            env = ToyEnv()
+            
+            # Run co-simulation
+            logs = run_cosim(
+                env=env,
+                steps=max_steps,
+                base_latency_ms=base_latency_ms,
+                sku=sku,
+                precision=precision,
+                resolution=(resolution_h, resolution_w),
+                batch_size=batch_size,
+            )
+            
+            # Evaluate results
+            df, collided = evaluate_logs(logs)
+            
+            # Display results
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.metric("Steps Completed", len(logs))
+            
+            with col2:
+                st.metric("Collision", "❌ YES" if collided else "✅ NO")
+            
+            with col3:
+                max_offset = df["offset"].abs().max()
+                st.metric("Max Offset", f"{max_offset:.3f}")
+            
+            # Visualization
+            st.subheader("Offset Over Time")
+            st.line_chart(df.set_index("step")["offset"])
+            
+            # Latency visualization
+            st.subheader("Latency Over Time")
+            st.line_chart(df.set_index("step")["latency_ms"])
+            
+            # Detailed metrics
+            with st.expander("Detailed Metrics"):
+                st.dataframe(df)
     
     st.header("Results")
     st.info("Results will appear here after running profile/predict/optimize.")
