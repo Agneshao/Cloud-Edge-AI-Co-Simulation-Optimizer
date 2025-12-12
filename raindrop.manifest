@@ -1,0 +1,7 @@
+application "edgetwin" {
+  mcp_service "jetson-logs" {
+    visibility = "public"
+  }
+
+  smartbucket "logs" {}
+}
